@@ -12,6 +12,7 @@ include(cmake/vendor.cmake)
 add_executable(Synapse
   src/main.cpp
   src/websocket.cpp
+  src/frame_serialization.cpp
 )
 
 target_include_directories(Synapse

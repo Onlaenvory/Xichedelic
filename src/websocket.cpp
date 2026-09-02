@@ -118,6 +118,7 @@ namespace XI {
       feedback[buffer] = '\0';
       spdlog::info("Server response : {}", feedback);
     }
+    spdlog::info("Successfully established the conenct to {}:{}{}", m_host,m_port,m_path);
     return true;
   }
 
