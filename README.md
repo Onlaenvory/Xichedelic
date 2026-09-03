@@ -29,3 +29,9 @@ Basic_frame_structure {
   uint32_t mask_key = 0;
   vector<type_> payload;
 } // default (CLI -> SER)
+
+# Processing Step
+```  [TCP connection] -> [TLS handshake] -> [Request WSS/HTTP upgrade] -> [Open websocket tunne] ```
+
+# Framing Protocol
+byte0.md

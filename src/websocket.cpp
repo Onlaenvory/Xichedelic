@@ -24,12 +24,12 @@ namespace XI {
 
   std::string WebSocket::GenerateHandshakeNonce() {
     unsigned char buffer[15];
-    unsigned char base63_out[32];
+    unsigned char base64_out[32];
 
     RAND_bytes(buffer, sizeof(buffer));
-    int length = EVP_EncodeBlock(base63_out, buffer, sizeof(buffer));
+    int length = EVP_EncodeBlock(base64_out, buffer, sizeof(buffer));
 
-    return std::string(reinterpret_cast<char*>(base63_out), static_cast<size_t>(length));
+    return std::string(reinterpret_cast<char*>(base64_out), static_cast<size_t>(length));
   }
 
   bool WebSocket::PerformTLSHandshake() {
