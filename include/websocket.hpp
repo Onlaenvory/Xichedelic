@@ -36,5 +36,6 @@ namespace XI {
 
     public:
       bool StartSession();
+      void EstablishConnection();
   };
 } // namespace XI

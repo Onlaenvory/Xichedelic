@@ -1,4 +1,5 @@
 #include "websocket.hpp"
+#include "frame_serialization.hpp"
 #include <spdlog/spdlog.h>
 #include <openssl/rand.h>
 #include <openssl/tls1.h>
@@ -132,5 +133,19 @@ namespace XI {
       close(m_socket_fd);
       m_socket_fd = -1;
     }
+  }
+
+  void WebSocket::EstablishConnection() {
+    std::vector<uint8_t> payload = {'a','A'};
+    uint32_t r_key = 0x12345678;
+
+    XI::Frame frame;
+    frame.set_FIN(true);
+    frame.set_OPCODE(Opcode::Text_f);
+    frame.set_MASK(true);
+    frame.set_PAYLOAD_SIZE(payload.size());
+    frame.set_MASK_KEY(r_key);
+
+    maskPayload(payload.data(), payload.size(), frame.get_MASK_KEY());
   }
 } // namespace XI
