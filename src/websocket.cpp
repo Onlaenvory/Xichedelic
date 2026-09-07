@@ -1,30 +1,47 @@
 #include "websocket.hpp"
-#include "frame_serialization.hpp"
+#include "randomizer.hpp"
+#include "opcode.hpp"
+#include <cstdint>
+#include <cstdlib>
+#include <format>
+#include <frame.hpp>
+
 #include <spdlog/spdlog.h>
 #include <openssl/rand.h>
 #include <openssl/tls1.h>
 #include <openssl/evp.h>
 #include <openssl/ssl.h>
+#include <string_view>
 #include <sys/socket.h>
+#include <thread>
 #include <unistd.h>
 #include <netdb.h>
+#include <vector>
 
 namespace XI {
-  bool WebSocket::StartSession() {
+  bool WebSocket::Connect(std::string_view currency) {
+    m_currency = currency;
+
     if (!PerformTLSHandshake()) {
       spdlog::error("Failed to perform TLS handshake");
+      Close();
       return false;
     }
     if (!PerformWebSocketHandshake()) {
       spdlog::error("Failed to perform websocket handshake");
-      Shutdown();
+      Close();
       return false;
     }
+
+    SentRequest();
+
+    m_state = true;
+    m_session = std::thread(&WebSocket::Listen, this);
     return true;
   }
 
   std::string WebSocket::GenerateHandshakeNonce() {
-    unsigned char buffer[15];
+    unsigned char buffer[16];
     unsigned char base64_out[32];
 
     RAND_bytes(buffer, sizeof(buffer));
@@ -123,29 +140,88 @@ namespace XI {
     return true;
   }
 
-  void WebSocket::Shutdown() {
+  void WebSocket::SentRequest() {
+    std::string request = std::format(R"({{"method":"SUBSCRIBE","params":["{}@aggTrade"],"id":1}})", m_currency);
+    std::vector<uint8_t> payload = {request.begin(), request.end()};
+
+    XI::HeaderFrame TEST;
+    TEST.SetFin(true);
+    TEST.SetOpcode(Opcode::Text);
+    TEST.SetMask(true);
+    TEST.SetPayloadSize(payload.size());
+    TEST.SetMaskKey(XI::Randomizer::key32_t());
+
+    XI::MaskPayload(payload.data(), payload.size(), TEST.MaskKey());
+
+    SSL_write(m_ssl, TEST.byte, TEST.headerSize);
+    SSL_write(m_ssl, payload.data(), payload.size());
+    spdlog::info("Finishing SSL write");
+  }
+
+  void WebSocket::Listen() {
+    uint8_t receiveBuffer[4096];
+
+    while (m_state) {
+      int readByte = SSL_read(m_ssl, receiveBuffer, sizeof(receiveBuffer));
+
+      if (readByte <= 0) {
+        spdlog::error("SSL disconnected");
+        break;
+      }
+
+      uint8_t opcode = receiveBuffer[0] & 0x0F;
+      uint8_t length = receiveBuffer[1] & 0x7F;
+      size_t headerByteSize = 2;
+      uint64_t payloadLength = length;
+
+      if (length == 126) {
+        payloadLength = (static_cast<uint64_t>(receiveBuffer[2]) << 8) | receiveBuffer[3];
+        headerByteSize += 2;
+      }
+      else if (length == 127) {
+        payloadLength = (
+          static_cast<uint64_t>(receiveBuffer[2]) << 56 |
+          static_cast<uint64_t>(receiveBuffer[3]) << 48 |
+          static_cast<uint64_t>(receiveBuffer[4]) << 40 |
+          static_cast<uint64_t>(receiveBuffer[5]) << 32 |
+          static_cast<uint64_t>(receiveBuffer[6]) << 24 |
+          static_cast<uint64_t>(receiveBuffer[7]) << 16 |
+          static_cast<uint64_t>(receiveBuffer[8]) << 8  |
+          static_cast<uint64_t>(receiveBuffer[9]));
+        headerByteSize += 8;
+      }
+
+      if (opcode == static_cast<uint8_t>(Opcode::Text)) {
+        std::string_view data(reinterpret_cast<char*>(&receiveBuffer[headerByteSize]), payloadLength);
+
+        spdlog::info(data);
+      }
+    }
+  }
+
+  void WebSocket::Close() {
+    m_state = false;
+
     if (m_ssl) {
       SSL_shutdown(m_ssl);
+    }
+
+    if (m_socket_fd != -1) {
+      shutdown(m_socket_fd, SHUT_RDWR);
+    }
+
+    if (m_session.joinable()) {
+      m_session.join();
+    }
+
+    if (m_ssl) {
       SSL_free(m_ssl);
       m_ssl = nullptr;
     }
+
     if (m_socket_fd != -1) {
       close(m_socket_fd);
       m_socket_fd = -1;
     }
-  }
-
-  void WebSocket::EstablishConnection() {
-    std::vector<uint8_t> payload = {'a','A'};
-    uint32_t r_key = 0x12345678;
-
-    XI::Frame frame;
-    frame.set_FIN(true);
-    frame.set_OPCODE(Opcode::Text_f);
-    frame.set_MASK(true);
-    frame.set_PAYLOAD_SIZE(payload.size());
-    frame.set_MASK_KEY(r_key);
-
-    maskPayload(payload.data(), payload.size(), frame.get_MASK_KEY());
   }
 } // namespace XI

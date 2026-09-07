@@ -1,37 +1,18 @@
-Frame structure 
+Responses
+e: Event type
+E: Event time
+s: Symbol
+a: Aggregate trade ID
+p: Price
+q: Quantity
+f: First trade ID
+l: Last trade ID
+T: Trade time
+m: Is the buyer the market maker?
+M: Ignore
 
-0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-------+-+-------------+-------------------------------+
-|F|R|R|R|opc1ode|M| Payload len |    Extended payload length    |
-|I|S|S|S|  (4)  |A|     (7)     |             (16)              |
-|N|V|V|V|       |S|             |                               |
-| |1|2|3|       |K|             |                               |
-+-+-+-+-+-------+-+-------------+-------------------------------+
-|                    Extended payload len C.                    | 
-+-------------------------------+-------------------------------+
-|    Extended payload len C.    |Masking-key, if MASK set to 1  |
-+-------------------------------+-------------------------------+
-| Masking-key (continued)       |          Payload Data         |
-+---------------------------------------------------------------+
-|                     Payload Data continued ...                |
-+---------------------------------------------------------------+
-|                     Payload Data continued ...                | 
-+---------------------------------------------------------------+
-
-# frame_serialization
-opcode { Continuation(0x0), Text(0x1), Binary(0x2), Close(0x8), Ping(0x9), Pong(0xA) }
-
-Basic_frame_structure {
-  bool FIN = true;
-  uint8_t opcode = 0x1; 
-  bool MASK = false; 
-  uint32_t mask_key = 0;
-  vector<type_> payload;
-} // default (CLI -> SER)
-
-# Processing Step
-```  [TCP connection] -> [TLS handshake] -> [Request WSS/HTTP upgrade] -> [Open websocket tunne] ```
-
-# Framing Protocol
-byte0.md
+- Not Complete : Ping-Pong connection to the server
+- Not Complete : Refractoring the code
+- Up's next : Support multiple symbol
+- Up's next : Selective data display
+- Up's next : Set target price

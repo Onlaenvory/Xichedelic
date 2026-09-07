@@ -1,9 +1,11 @@
-#include "websocket.hpp"
+#include <iostream>
+#include <websocket.hpp>
 
 int main() {
-  XI::WebSocket xichedelic("btcusdt");
+  XI::WebSocket xichedelic;
 
-  xichedelic.StartSession();
-  xichedelic.EstablishConnection();
+  if (!xichedelic.Connect("btcusdt")) return 1;
+
+  std::cin.get();
   return 0;
 }

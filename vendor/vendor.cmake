@@ -1,0 +1,3 @@
+set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/spdlog)
