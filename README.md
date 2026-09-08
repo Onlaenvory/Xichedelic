@@ -11,8 +11,8 @@ T: Trade time
 m: Is the buyer the market maker?  
 M: Ignore  
 
-- Not Complete : Ping-Pong connection to the server
-- Not Complete : Refractoring the code
-- Up's next : Support multiple symbol
-- Up's next : Selective data display
-- Up's next : Set target price
+- [+] Ping-Pong connection to the server
+- [-] Refactoring 
+- [ ] Support multiple symbol
+- [ ] Selective data display
+- [ ] Set target price

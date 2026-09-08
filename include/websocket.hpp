@@ -39,6 +39,6 @@ namespace XI {
       void SentRequest();
       void Listen();
     public:
-      bool Connect(std::string_view currency);
+      void Connect(std::string_view currency);
   };
 } // namespace XI

@@ -13,31 +13,27 @@
 #include <openssl/ssl.h>
 #include <string_view>
 #include <sys/socket.h>
-#include <thread>
 #include <unistd.h>
 #include <netdb.h>
 #include <vector>
 
 namespace XI {
-  bool WebSocket::Connect(std::string_view currency) {
+  void WebSocket::Connect(std::string_view currency) {
     m_currency = currency;
 
     if (!PerformTLSHandshake()) {
       spdlog::error("Failed to perform TLS handshake");
       Close();
-      return false;
     }
     if (!PerformWebSocketHandshake()) {
       spdlog::error("Failed to perform websocket handshake");
       Close();
-      return false;
     }
 
     SentRequest();
 
     m_state = true;
-    m_session = std::thread(&WebSocket::Listen, this);
-    return true;
+    Listen();
   }
 
   std::string WebSocket::GenerateHandshakeNonce() {
@@ -195,6 +191,34 @@ namespace XI {
         std::string_view data(reinterpret_cast<char*>(&receiveBuffer[headerByteSize]), payloadLength);
 
         spdlog::info(data);
+      }
+      else if (opcode == static_cast<uint8_t>(Opcode::Ping)) {
+        std::vector<uint8_t> respondFrame;
+        respondFrame.reserve(10 + payloadLength);
+        respondFrame.push_back(0x8A);
+
+        if (payloadLength <= 125) {
+          respondFrame.push_back(static_cast<uint8_t>(payloadLength));
+        }
+        else if (payloadLength <= 65535) {
+          respondFrame.push_back(0x7E);
+          respondFrame.push_back((payloadLength >> 8) & 0xFF);
+          respondFrame.push_back(payloadLength & 0xFF);
+        }
+        else {
+          respondFrame.push_back(0x7F);
+          respondFrame.push_back((payloadLength >> 56) & 0xFF);
+          respondFrame.push_back((payloadLength >> 48) & 0xFF);
+          respondFrame.push_back((payloadLength >> 40) & 0xFF);
+          respondFrame.push_back((payloadLength >> 32) & 0xFF);
+          respondFrame.push_back((payloadLength >> 24) & 0xFF);
+          respondFrame.push_back((payloadLength >> 16) & 0xFF);
+          respondFrame.push_back((payloadLength >> 8) & 0xFF);
+          respondFrame.push_back(payloadLength & 0xFF);
+        }
+
+        respondFrame.insert(respondFrame.end(), reinterpret_cast<uint8_t*>(&receiveBuffer[headerByteSize]), (reinterpret_cast<uint8_t*>(&receiveBuffer[headerByteSize]) + payloadLength));
+        SSL_write(m_ssl, respondFrame.data(), respondFrame.size());
       }
     }
   }
