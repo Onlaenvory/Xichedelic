@@ -1,7 +1,7 @@
 [
   {
     "label": "CMake: Build & Run",
-    "command": "cmake -B build && cmake --build build && ./build/Synapse",
+    "command": "cmake -B build && cmake --build build && ./build/XICHEDELIC_TEST",
     "cwd": "$ZED_WORKTREE_ROOT",
     "use_new_terminal": false,
     "allow_concurrent_runs": false,
@@ -23,7 +23,7 @@
 
   {
     "label": "CMake: Run Executable",
-    "command": "./build/Synapse",
+    "command": "./build/XICHEDELIC_TEST",
     "cwd": "$ZED_WORKTREE_ROOT",
     "use_new_terminal": false,
     "allow_concurrent_runs": false,

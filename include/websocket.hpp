@@ -1,44 +1,41 @@
 #pragma once
 
 #include <openssl/ssl.h>
-#include <format>
-#include <string>
 #include <string_view>
 #include <thread>
 
 namespace XI {
-  class WebSocket {
-    public:
-      WebSocket() : m_ssl_ctx(SSL_CTX_new(TLS_client_method())) {}
-      ~WebSocket() {
-        Close();
-        if (m_ssl_ctx) {
-          SSL_CTX_free(m_ssl_ctx);
-          m_ssl_ctx = nullptr;
-        }
-      }
+class WebSocket {
+public:
+  WebSocket() : ssl_ctx_(SSL_CTX_new(TLS_client_method())) {}
+  ~WebSocket() {
+    Close();
+    if (ssl_ctx_) {
+      SSL_CTX_free(ssl_ctx_);
+      ssl_ctx_ = nullptr;
+    }
+  }
 
-    private:
-      const char* m_host = "data-stream.binance.vision";
-      const char* m_port = "443";
-      std::string_view  m_currency;
+private:
+  const char *host_ = "data-stream.binance.vision";
+  const char *port_ = "443";
+  std::string_view symbol_;
 
-      int m_socket_fd = -1;
+  int sockfd_ = -1;
+  SSL_CTX *ssl_ctx_ = nullptr;
+  SSL *ssl_ = nullptr;
 
-      SSL_CTX* m_ssl_ctx = nullptr;
-      SSL* m_ssl = nullptr;
+  std::thread session_;
+  std::atomic<bool> state_ {false};
 
-      std::string m_path = std::format("/ws/{}@aggTrade", m_currency);
-      std::thread m_session;
-      std::atomic<bool> m_state{false};
-    private:
-      std::string GenerateHandshakeNonce();
-      bool PerformTLSHandshake();
-      bool PerformWebSocketHandshake();
-      void Close();
-      void SentRequest();
-      void Listen();
-    public:
-      void Connect(std::string_view currency);
-  };
+private:
+  bool TLSHandshake();
+  bool HTTPUpgrade();
+  void SentRequest();
+  void Listen();
+  void Close();
+
+public:
+  void Connect(std::string_view currency);
+};
 } // namespace XI

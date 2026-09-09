@@ -1,12 +1,16 @@
 cmake_minimum_required(VERSION 3.25)
 
 # ---------------------------------------------------------------------------------------
+# Start xichedelic project
+# ---------------------------------------------------------------------------------------
+
+project(XICHEDELIC VERSION 0.1 LANGUAGES CXX)
+
+# ---------------------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------------------
 
 include(vendor/vendor.cmake)
-
-project(Synapse VERSION 0.1 LANGUAGES CXX)
 
 # ---------------------------------------------------------------------------------------
 # Compiler config
@@ -25,21 +29,33 @@ find_package(OpenSSL REQUIRED)
 # Target config
 # ---------------------------------------------------------------------------------------
 
-add_executable(Synapse
-  src/main.cpp
+set(XICHEDELIC_SOURCES
   src/websocket.cpp
+  src/websocket_handshake.cpp
 )
 
-target_include_directories(Synapse
+add_library(XICHEDELIC STATIC ${XICHEDELIC_SOURCES})
+
+target_include_directories(XICHEDELIC
+  PUBLIC
+    include
   PRIVATE
     src
-    include
     vendor
 )
 
-target_link_libraries(Synapse
+target_link_libraries(XICHEDELIC
   PRIVATE
     spdlog
     OpenSSL::SSL
     OpenSSL::Crypto
+)
+
+add_executable(XICHEDELIC_TEST
+  test/main.cpp
+)
+
+target_link_libraries(XICHEDELIC_TEST
+  PRIVATE
+    XICHEDELIC
 )
