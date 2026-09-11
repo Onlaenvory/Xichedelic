@@ -1,6 +1,6 @@
 #include <spdlog/spdlog.h>
 #include <openssl/tls1.h>
-#include <randomizer.hpp>
+#include <key.hpp>
 #include <websocket.hpp>
 #include <openssl/ssl.h>
 #include <sys/socket.h>
@@ -72,7 +72,7 @@ bool WebSocket::HTTPUpgrade() {
     "Connection: Upgrade\r\n"
     "Sec-WebSocket-Key: {}\r\n"
     "Sec-WebSocket-Version: 12\r\n\r\n",
-    path_, host_, key64_t()
+    path_, host_, Key128Base64()
   );
 
   if (SSL_write(ssl_, request.c_str(), static_cast<int>(request.length())) <= 0) {

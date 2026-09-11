@@ -1,21 +1,17 @@
-#include "opcode.hpp"
-#include "randomizer.hpp"
-#include <cstdint>
-#include <cstdlib>
-#include <format>
-#include <frame.hpp>
-#include <websocket.hpp>
-
-#include <netdb.h>
-#include <openssl/evp.h>
-#include <openssl/rand.h>
-#include <openssl/ssl.h>
-#include <openssl/tls1.h>
 #include <spdlog/spdlog.h>
-#include <string_view>
+#include <websocket.hpp>
+#include <openssl/ssl.h>
 #include <sys/socket.h>
+#include <string_view>
+#include <opcode.hpp>
+#include <frame.hpp>
 #include <unistd.h>
+#include <cstdlib>
+#include <key.hpp>
+#include <cstdint>
+#include <netdb.h>
 #include <vector>
+#include <format>
 
 namespace XI {
 void WebSocket::Connect(std::string_view currency) {
@@ -41,7 +37,7 @@ void WebSocket::SentRequest() {
   Frame.SetOpcode(Opcode::Text);
   Frame.SetMask(true);
   Frame.SetPayloadSize(payload.size());
-  Frame.SetMaskKey(key32_t());
+  Frame.SetMaskKey(Key32());
 
   MaskPayload(payload.data(), payload.size(), Frame.MaskKey());
 
@@ -49,7 +45,6 @@ void WebSocket::SentRequest() {
   SSL_write(ssl_, payload.data(), payload.size());
   spdlog::info("{:<30} COMPLETE", "SSL write");
 }
-
 void WebSocket::Listen() {
   uint8_t buffer[4096];
 
@@ -101,12 +96,11 @@ void WebSocket::Listen() {
         }
       }
 
-      respond.insert(respond.end(), reinterpret_cast<uint8_t*>(&respond[headerSize]), (reinterpret_cast<uint8_t*>(&buffer[headerSize]) + payloadLength));
+      respond.insert(respond.end(), reinterpret_cast<uint8_t *>(&buffer[headerSize]), (reinterpret_cast<uint8_t *>(&buffer[headerSize]) + payloadLength));
       SSL_write(ssl_, respond.data(), respond.size());
     }
   }
 }
-
 void WebSocket::Close() {
   state_ = false;
 

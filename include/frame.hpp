@@ -1,9 +1,9 @@
 #pragma once
 
+#include <spdlog/spdlog.h>
+#include <opcode.hpp>
 #include <cstddef>
 #include <cstdint>
-#include <opcode.hpp>
-#include <spdlog/spdlog.h>
 
 namespace XI {
 struct HeaderFrame {

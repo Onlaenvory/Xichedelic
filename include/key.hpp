@@ -5,13 +5,13 @@
 #include <random>
 
 namespace XI {
-static uint32_t key32_t() {
-  thread_local std::mt19937 key(std::random_device{}());
+static uint32_t Key32() {
+  thread_local std::mt19937 key(std::random_device{} ());
   std::uniform_int_distribution<uint32_t> range(0x00000000, 0xFFFFFFFF);
   return range(key);
 }
 
-static std::string key64_t() {
+static std::string Key128Base64() {
   unsigned char buffer[16];
   unsigned char base64_out[32];
 
